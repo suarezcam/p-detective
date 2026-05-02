@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>p-Detective</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #FAF3DD; min-height: 100vh; padding: 20px; display: flex; justify-content: center; }
+.screen { display: none; width: 100%; max-width: 680px; }
+.screen.active { display: flex; flex-direction: column; align-items: center; }
+
+/* NAMES & FOOTER */
+.game-name { font-size: 13px; color: #9a9a9a; margin-bottom: 16px; align-self: flex-start; }
+.game-name em { font-style: italic; }
+.footer-text { margin-top: 28px; font-size: 12px; color: #9a9a9a; text-align: center; line-height: 1.5; padding-bottom: 16px; }
+
+/* WELCOME */
+#welcome { justify-content: center; min-height: 90vh; text-align: center; padding: 40px 20px; }
+.logo { font-size: 52px; margin-bottom: 8px; }
+.title { font-size: 32px; font-weight: 700; color: #5E6572; margin-bottom: 6px; }
+.subtitle { font-size: 16px; color: #5E6572; opacity: 0.8; margin-bottom: 20px; max-width: 400px; }
+.alpha-badge { background: #AED9E0; color: #2a6070; border-radius: 20px; padding: 8px 20px; font-size: 14px; font-weight: 600; margin-bottom: 24px; display: inline-block; }
+.btn-start { background: #FFA69E; color: #fff; border: none; border-radius: 25px; padding: 16px 48px; font-size: 18px; font-weight: 700; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 15px rgba(255,166,158,0.4); }
+.btn-start:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,166,158,0.5); }
+
+/* TOP BAR */
+#game { width: 100%; max-width: 680px; padding-top: 10px; }
+.top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.score-box { background: #B8F2E6; border-radius: 20px; padding: 6px 18px; font-weight: 700; color: #1a6050; font-size: 15px; }
+.round-box { background: #AED9E0; border-radius: 20px; padding: 6px 18px; font-weight: 700; color: #1a4a5a; font-size: 15px; }
+.streak-box { background: #FFA69E; border-radius: 20px; padding: 6px 18px; font-weight: 700; color: #7a2a22; font-size: 15px; transition: transform 0.15s; }
+.streak-box.bump { transform: scale(1.2); }
+
+.progress-bar { width: 100%; height: 10px; background: #e0e0e0; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #FFA69E, #AED9E0); border-radius: 10px; transition: width 0.4s ease; }
+
+/* CASE CARD */
+.case-card { background: #fff; border-radius: 20px; padding: 28px; box-shadow: 0 4px 20px rgba(94,101,114,0.1); width: 100%; margin-bottom: 20px; border-left: 6px solid #FFA69E; }
+.case-tag { background: #FFA69E; color: #fff; border-radius: 12px; padding: 4px 14px; font-size: 12px; font-weight: 700; display: inline-block; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.case-title { font-size: 18px; font-weight: 700; color: #5E6572; margin-bottom: 10px; }
+.case-text { font-size: 15px; color: #5E6572; line-height: 1.6; margin-bottom: 14px; }
+.p-value { background: #FAF3DD; border: 2px solid #AED9E0; border-radius: 12px; padding: 10px 18px; font-size: 20px; font-weight: 700; color: #1a4a5a; display: inline-block; }
+
+/* LEVEL BADGE */
+.level-badge { display: inline-block; margin-bottom: 14px; background: #5E6572; color: #fff; border-radius: 12px; padding: 4px 14px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
+
+/* QUESTIONS */
+.question-block { margin-bottom: 18px; width: 100%; }
+.q-label { font-size: 14px; font-weight: 700; color: #5E6572; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.q-text { font-size: 16px; color: #5E6572; margin-bottom: 12px; font-weight: 600; }
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-opt { border: 2.5px solid #AED9E0; background: #fff; color: #5E6572; border-radius: 20px; padding: 10px 26px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn-opt:hover:not(:disabled) { background: #AED9E0; color: #1a4a5a; }
+.btn-opt:disabled { cursor: default; opacity: 0.7; }
+.btn-opt.correct { background: #B8F2E6; border-color: #1a9070; color: #1a6050; }
+.btn-opt.wrong { background: #FFA69E; border-color: #cc6a62; color: #7a2a22; }
+.btn-opt.missed { background: #FAF3DD; border-color: #aaa; color: #999; }
+
+/* FEEDBACK */
+.feedback-list { width: 100%; margin-bottom: 10px; }
+.feedback { display: flex; align-items: flex-start; gap: 12px; padding: 12px 18px; border-radius: 14px; margin-bottom: 8px; font-size: 14px; font-weight: 600; animation: popIn 0.25s ease; }
+.feedback.ok { background: #B8F2E6; color: #1a6050; border: 1.5px solid #5fcfad; }
+.feedback.fail { background: #FFA69E; color: #7a2a22; border: 1.5px solid #e07068; }
+.feedback-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.feedback-body { display: flex; flex-direction: column; gap: 2px; }
+.feedback-q { font-size: 12px; opacity: 0.75; font-weight: 400; }
+
+/* CONCEPTUAL NOTE */
+.concept-note { background: #FAF3DD; border: 2px solid #AED9E0; border-radius: 14px; padding: 14px 18px; margin-bottom: 14px; width: 100%; font-size: 14px; color: #2a6070; line-height: 1.6; display: none; animation: popIn 0.3s ease; }
+.concept-note.show { display: block; }
+.concept-note strong { font-size: 13px; display: block; margin-bottom: 4px; color: #1a4a5a; text-transform: uppercase; letter-spacing: 0.4px; }
+
+@keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.btn-next { background: #5E6572; color: #fff; border: none; border-radius: 25px; padding: 14px 40px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: transform 0.15s; display: none; }
+.btn-next:hover { transform: translateY(-1px); }
+.btn-next.show { display: block; }
+
+/* RESULTS */
+#results { width: 100%; max-width: 640px; padding: 30px 20px 20px; }
+.result-header { text-align: center; margin-bottom: 24px; }
+.result-emoji { font-size: 64px; margin-bottom: 10px; }
+.result-title { font-size: 26px; font-weight: 700; color: #5E6572; margin-bottom: 8px; }
+.result-msg { font-size: 16px; color: #5E6572; opacity: 0.85; max-width: 420px; margin: 0 auto; line-height: 1.6; }
+.score-display { background: #fff; border-radius: 20px; padding: 20px 40px; box-shadow: 0 4px 20px rgba(94,101,114,0.12); margin-bottom: 20px; text-align: center; width: 100%; }
+.score-big { font-size: 52px; font-weight: 800; color: #FFA69E; }
+.score-label { font-size: 15px; color: #5E6572; }
+
+.review-list { width: 100%; margin-bottom: 20px; }
+.review-item { background: #fff; border-radius: 14px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; font-size: 14px; color: #5E6572; }
+.ri-icon { font-size: 20px; flex-shrink: 0; }
+.ri-title { font-weight: 700; font-size: 14px; }
+.ri-p { color: #1a4a5a; font-weight: 600; font-size: 13px; }
+
+.warning-box { background: #fff8e6; border: 2px solid #f0c040; border-radius: 16px; padding: 20px 22px; margin-bottom: 20px; width: 100%; }
+.warning-header { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #7a5a00; margin-bottom: 10px; }
+.warning-text { font-size: 13px; color: #5a4200; line-height: 1.65; margin-bottom: 10px; }
+.warning-ref { font-size: 12px; color: #7a6020; font-style: italic; line-height: 1.5; border-top: 1px solid #f0c040; padding-top: 8px; }
+.warning-ref a { color: #7a6020; }
+
+.disclaimer-box { background: #AED9E0; border-radius: 14px; padding: 12px 18px; margin-bottom: 20px; text-align: center; font-size: 13px; color: #1a4a5a; width: 100%; }
+.btn-retry { background: #FFA69E; color: #fff; border: none; border-radius: 25px; padding: 14px 44px; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(255,166,158,0.4); transition: transform 0.15s; display: block; margin: 0 auto 0; }
+.btn-retry:hover { transform: translateY(-2px); }
+
+/* CONFETTI */
+#confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; display: none; }
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- WELCOME -->
+<div id="welcome" class="screen active">
+  <div class="game-name"><em>p</em>-Detective</div>
+  <div class="logo">🔍</div>
+  <div class="title"><em>p</em>-Detective</div>
+  <div class="subtitle">Practica la lectura e interpretación del valor <em>p</em> con casos hipotéticos de psicología</div>
+  <div class="alpha-badge">⚡ Nivel de significancia: α = 0.05</div>
+  <button class="btn-start" onclick="startGame()">¡Jugar ahora!</button>
+  <div class="footer-text">Recurso pedagógico elaborado por Camila Suárez Acevedo © 2026 Todos los derechos reservados</div>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div class="game-name"><em>p</em>-Detective</div>
+  <div class="top-bar">
+    <div class="score-box">⭐ Puntos: <span id="score-val">0</span></div>
+    <div class="streak-box" id="streak-box">🔥 Racha: <span id="streak-val">0</span></div>
+    <div class="round-box">Caso <span id="round-num">1</span> / 5</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+
+  <div class="case-card">
+    <div class="case-tag" id="case-tag"></div>
+    <div class="level-badge" id="level-badge"></div>
+    <div class="case-title" id="case-title"></div>
+    <div class="case-text" id="case-text"></div>
+    <div class="p-value">p = <span id="p-val"></span></div>
+  </div>
+
+  <div id="q1-block" class="question-block">
+    <div class="q-label">Pregunta 1</div>
+    <div class="q-text">¿El valor p es menor que 0.05?</div>
+    <div class="btn-group" id="q1-btns">
+      <button class="btn-opt" id="q1-si" onclick="answer(1,'si')">Sí</button>
+      <button class="btn-opt" id="q1-no" onclick="answer(1,'no')">No</button>
+    </div>
+  </div>
+  <div id="q2-block" class="question-block" style="display:none">
+    <div class="q-label">Pregunta 2</div>
+    <div class="q-text">El resultado es estadísticamente...</div>
+    <div class="btn-group" id="q2-btns">
+      <button class="btn-opt" id="q2-sig" onclick="answer(2,'sig')">Significativo</button>
+      <button class="btn-opt" id="q2-nosig" onclick="answer(2,'nosig')">No significativo</button>
+    </div>
+  </div>
+  <div id="q3-block" class="question-block" style="display:none">
+    <div class="q-label">Pregunta 3</div>
+    <div class="q-text">¿Qué decisión tomas frente a H₀?</div>
+    <div class="btn-group" id="q3-btns">
+      <button class="btn-opt" id="q3-rec" onclick="answer(3,'rec')">Rechazo H₀</button>
+      <button class="btn-opt" id="q3-norec" onclick="answer(3,'norec')">No rechazo H₀</button>
+    </div>
+  </div>
+  <div id="q4-block" class="question-block" style="display:none">
+    <div class="q-label">Pregunta 4</div>
+    <div class="q-text">¿Qué ocurre con la hipótesis alterna (H₁)?</div>
+    <div class="btn-group" id="q4-btns">
+      <button class="btn-opt" id="q4-apoya" onclick="answer(4,'apoya')">Se apoya H₁</button>
+      <button class="btn-opt" id="q4-noapoya" onclick="answer(4,'noapoya')">No hay evidencia suficiente para H₁</button>
+    </div>
+  </div>
+
+  <div class="feedback-list" id="feedback-list"></div>
+  <div class="concept-note" id="concept-note"><strong>💡 Nota conceptual</strong><span id="concept-text"></span></div>
+  <button class="btn-next" id="btn-next" onclick="nextRound()">Siguiente caso →</button>
+  <div class="footer-text">Recurso pedagógico elaborado por Camila Suárez Acevedo © 2026 Todos los derechos reservados</div>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="screen">
+  <div class="game-name"><em>p</em>-Detective</div>
+  <div class="result-header">
+    <div class="result-emoji" id="res-emoji"></div>
+    <div class="result-title" id="res-title"></div>
+    <div class="result-msg" id="res-msg"></div>
+  </div>
+  <div class="score-display">
+    <div class="score-big" id="res-score"></div>
+    <div class="score-label" id="res-score-label"></div>
+  </div>
+  <div class="review-list" id="review-list"></div>
+  <div class="warning-box">
+    <div class="warning-header"><span>⚠️</span> Importante: Límites del valor p</div>
+    <div class="warning-text">Ferr (2025) recomienda ir más allá de la aplicación mecánica de pruebas y desarrollar una comprensión conceptual profunda de los principios subyacentes. Es fundamental evitar errores comunes, como equiparar el valor p con la probabilidad de que la hipótesis nula sea cierta o interpretar resultados no significativos como evidencia de que no existe un efecto, especialmente en estudios con muestras pequeñas o baja potencia estadística. En lugar de depender de umbrales arbitrarios como p &lt; 0.05, se sugiere enfatizar el uso de tamaños del efecto e intervalos de confianza, que permiten evaluar la importancia práctica y clínica de los hallazgos en el mundo real.</div>
+    <div class="warning-ref">Ferr, H. (2025). Misinterpretations of the p-value in psychological research: Implications for mental health and psychological science. <em>PLOS Mental Health, 2</em>(2), e0000242. <a href="https://doi.org/10.1371/journal.pmen.0000242" target="_blank">https://doi.org/10.1371/journal.pmen.0000242</a></div>
+  </div>
+  <div class="disclaimer-box">Este es un recurso pedagógico elaborado por Camila Suárez Acevedo.</div>
+  <button class="btn-retry" onclick="startGame()">🔄 Jugar otra ronda</button>
+  <div class="footer-text">Recurso pedagógico elaborado por Camila Suárez Acevedo © 2026 Todos los derechos reservados</div>
+</div>
+
+<script>
+const ALL_CASES = [
+  {tag:"Correlación",title:"Estrés y Memoria",text:"Un psicólogo plantea la H₀ de que no hay relación entre el nivel de estrés y la capacidad de memoria a corto plazo. Tras realizar una correlación de Pearson, obtuvo",p:0.002,sig:true},
+  {tag:"Prueba t",title:"Inteligencia Emocional y Género",text:"Se comparó la inteligencia emocional entre hombres y mujeres. La H₀ plantea que no hay diferencias entre las medias de ambos grupos. La prueba t arrojó",p:0.28,sig:false},
+  {tag:"TCC",title:"Terapia Cognitivo-Conductual y Ansiedad",text:"Un investigador evalúa si una intervención de TCC reduce los síntomas de ansiedad en adultos. La H₀ indica que la intervención no tiene efecto. El análisis arrojó",p:0.03,sig:true},
+  {tag:"Regresión",title:"Sueño y Rendimiento Académico",text:"Se estudia si el número de horas de sueño predice el rendimiento académico en universitarios. La H₀ sostiene que no hay relación. La regresión lineal arrojó",p:0.41,sig:false},
+  {tag:"Correlación",title:"Autoestima y Redes Sociales",text:"Una psicóloga investiga si el tiempo de uso de redes sociales se asocia con niveles bajos de autoestima en adolescentes. La H₀ plantea que no existe asociación. La correlación arrojó",p:0.01,sig:true},
+  {tag:"Chi-cuadrado",title:"Crianza y Conducta Agresiva",text:"Se analiza si el estilo de crianza autoritario se relaciona con conductas agresivas en niños de primaria. La H₀ indica que no hay relación. El análisis chi-cuadrado arrojó",p:0.09,sig:false},
+  {tag:"Wilcoxon",title:"Mindfulness y Estrés",text:"Un equipo aplica un programa de mindfulness de 8 semanas y mide el estrés percibido antes y después. La H₀ es que el programa no reduce el estrés. La prueba de Wilcoxon arrojó",p:0.004,sig:true},
+  {tag:"ANOVA",title:"Nivel Socioeconómico y Depresión",text:"Se investiga si el nivel socioeconómico bajo predice mayores síntomas depresivos. La H₀ sostiene que no hay diferencia entre grupos. El ANOVA arrojó",p:0.17,sig:false},
+  {tag:"Regresión logística",title:"Violencia Doméstica y TEPT",text:"Un psicólogo clínico examina si la exposición a violencia doméstica predice síntomas de TEPT en mujeres. La H₀ plantea que no hay relación. La regresión logística arrojó",p:0.0008,sig:true},
+  {tag:"Prueba t",title:"Música y Concentración",text:"Se evalúa si escuchar música clásica mejora la concentración durante tareas cognitivas. La H₀ indica que no hay diferencia con o sin música. La prueba t arrojó",p:0.53,sig:false},
+  {tag:"ANOVA",title:"Ejercicio Físico y Estado de Ánimo",text:"Una investigadora estudia si el ejercicio aeróbico regular mejora el estado de ánimo en personas con depresión leve. La H₀ es que no hay diferencia. El análisis arrojó",p:0.02,sig:true},
+  {tag:"Spearman",title:"Apego y Satisfacción en Pareja",text:"Se estudia si el estilo de apego ansioso se asocia con menor satisfacción en relaciones de pareja. La H₀ sostiene que no hay asociación. La correlación de Spearman arrojó",p:0.33,sig:false},
+  {tag:"Prueba t",title:"Alcohol y Toma de Decisiones",text:"Un investigador evalúa si el consumo frecuente de alcohol afecta la toma de decisiones de riesgo en jóvenes. La H₀ plantea que no hay efecto. La prueba t arrojó",p:0.047,sig:true},
+  {tag:"Regresión",title:"Perfeccionismo y Burnout Académico",text:"Una psicóloga investiga si el perfeccionismo maladaptativo predice el burnout en estudiantes universitarios. La H₀ indica que no hay relación. La regresión lineal arrojó",p:0.006,sig:true},
+  {tag:"Prueba t",title:"Color del Entorno y Creatividad",text:"Se estudia si trabajar en una habitación azul aumenta la creatividad comparada con una habitación blanca. La H₀ es que el color no influye. El análisis arrojó",p:0.61,sig:false},
+  {tag:"Correlación",title:"Empatía y Satisfacción Laboral",text:"Se evalúa si niveles altos de empatía se relacionan con mayor satisfacción laboral en profesionales de la salud. La H₀ sostiene que no hay relación. La correlación arrojó",p:0.03,sig:true},
+  {tag:"Regresión",title:"Pantallas y Calidad del Sueño Infantil",text:"Un investigador estudia si el tiempo frente a pantallas antes de dormir afecta la calidad del sueño en niños de 8 a 12 años. La H₀ es que no hay efecto. El análisis arrojó",p:0.22,sig:false},
+  {tag:"Regresión",title:"Resiliencia y Recuperación del Duelo",text:"Se investiga si altos niveles de resiliencia predicen una recuperación más rápida del duelo en adultos mayores. La H₀ plantea que no hay relación. La regresión arrojó",p:0.011,sig:true},
+  {tag:"Correlación",title:"Motivación Intrínseca y Procrastinación",text:"Una psicóloga educativa evalúa si la motivación intrínseca se asocia negativamente con la procrastinación en estudiantes de posgrado. La H₀ indica que no hay asociación. La correlación arrojó",p:0.44,sig:false},
+  {tag:"Prueba t",title:"Técnicas de Estudio y Memoria",text:"Se comparan dos técnicas de estudio (repetición espaciada vs. lectura pasiva) en la retención a largo plazo. La H₀ es que no hay diferencia entre técnicas. El análisis arrojó",p:0.12,sig:false},
+  {tag:"Correlación",title:"Soledad y Bienestar Psicológico",text:"Se examina si los niveles altos de soledad percibida predicen menor bienestar psicológico en adultos jóvenes. La H₀ plantea que no existe relación. La correlación de Pearson arrojó",p:0.007,sig:true},
+  {tag:"Prueba t",title:"Personalidad y Liderazgo",text:"Un investigador compara los puntajes de liderazgo entre personas con personalidad extrovertida e introvertida. La H₀ indica que no hay diferencia. La prueba t arrojó",p:0.38,sig:false},
+  {tag:"Regresión logística",title:"Regulación Emocional y Consumo de Sustancias",text:"Se estudia si las deficiencias en regulación emocional predicen el consumo problemático de sustancias en universitarios. La H₀ es que no hay relación. La regresión logística arrojó",p:0.019,sig:true},
+  {tag:"Correlación",title:"Apoyo Social y Ansiedad",text:"Una investigadora evalúa si el nivel de apoyo social percibido se asocia inversamente con síntomas de ansiedad generalizada. La H₀ plantea que no hay asociación. La correlación arrojó",p:0.55,sig:false},
+  {tag:"Regresión",title:"Autoeficacia y Desempeño Laboral",text:"Se examina si la autoeficacia percibida predice el desempeño laboral en trabajadores de call center. La H₀ indica que no hay relación. La regresión lineal arrojó",p:0.014,sig:true},
+  {tag:"Spearman",title:"Neuroticismo y Calidad de Vida",text:"Un psicólogo investiga si altos niveles de neuroticismo se asocian con menor calidad de vida reportada. La H₀ sostiene que no hay asociación. La correlación de Spearman arrojó",p:0.29,sig:false},
+  {tag:"ANOVA",title:"Inteligencia Fluida y Edad",text:"Se evalúa si la inteligencia fluida disminuye significativamente con la edad en adultos mayores de 60 años. La H₀ es que no hay diferencia entre grupos etarios. El ANOVA arrojó",p:0.001,sig:true},
+  {tag:"Correlación",title:"Satisfacción Marital y Comunicación Asertiva",text:"Una terapeuta investiga si la comunicación asertiva entre parejas se relaciona con mayor satisfacción marital. La H₀ plantea que no hay relación. La correlación arrojó",p:0.48,sig:false},
+  {tag:"Regresión",title:"Trauma Infantil y Relaciones Adultas",text:"Se estudia si el reporte de trauma en la infancia predice dificultades en las relaciones interpersonales en la adultez. La H₀ es que no hay relación. La regresión arrojó",p:0.003,sig:true},
+  {tag:"Chi-cuadrado",title:"Hábitos Alimentarios y Estado de Ánimo",text:"Se investiga si el consumo regular de alimentos ultraprocesados se asocia con mayor sintomatología depresiva. La H₀ indica que no hay asociación. El análisis chi-cuadrado arrojó",p:0.67,sig:false},
+  {tag:"Wilcoxon",title:"Psicoeducación y Adherencia al Tratamiento",text:"Se evalúa si participar en un programa de psicoeducación aumenta la adherencia al tratamiento en pacientes con trastorno bipolar. La H₀ plantea que no hay efecto. La prueba de Wilcoxon arrojó",p:0.038,sig:true},
+  {tag:"Regresión",title:"Optimismo y Recuperación Postoperatoria",text:"Una investigadora examina si los niveles de optimismo predicen una recuperación más rápida tras una cirugía. La H₀ sostiene que no hay relación. La regresión lineal arrojó",p:0.71,sig:false},
+  {tag:"Correlación",title:"Cohesión Familiar y Conducta Prosocial",text:"Se estudia si la cohesión familiar percibida se asocia con mayores conductas prosociales en adolescentes. La H₀ indica que no hay asociación. La correlación de Pearson arrojó",p:0.026,sig:true},
+  {tag:"Regresión",title:"Fatiga por Compasión y Antigüedad Laboral",text:"Un psicólogo organizacional evalúa si los años de experiencia en trabajo clínico predicen la fatiga por compasión en psicólogos. La H₀ plantea que no hay relación. La regresión arrojó",p:0.43,sig:false},
+  {tag:"Correlación",title:"Noticias Negativas y Ansiedad",text:"Se evalúa si la exposición frecuente a noticias negativas en medios digitales aumenta los síntomas de ansiedad en adultos jóvenes. La H₀ es que no hay relación. La correlación arrojó",p:0.009,sig:true},
+  {tag:"Prueba t",title:"Autoconcepto y Rendimiento en Matemáticas",text:"Se compara el autoconcepto académico entre estudiantes con alto y bajo rendimiento en matemáticas. La H₀ indica que no hay diferencia. La prueba t arrojó",p:0.57,sig:false},
+  {tag:"Regresión",title:"Inteligencia Cristalizada y Nivel Educativo",text:"Una investigadora examina si el nivel educativo alcanzado predice la inteligencia cristalizada en adultos mayores. La H₀ sostiene que no hay relación. La regresión lineal arrojó",p:0.005,sig:true},
+  {tag:"Regresión logística",title:"Rumiación y Trastorno Depresivo Mayor",text:"Se estudia si los puntajes altos en rumiación predicen la presencia de trastorno depresivo mayor. La H₀ plantea que no hay relación. La regresión logística arrojó",p:0.83,sig:false},
+  {tag:"Prueba t",title:"Psicología Positiva y Bienestar Subjetivo",text:"Un equipo aplica una intervención de psicología positiva (gratitud y fortalezas) y evalúa su efecto sobre el bienestar subjetivo. La H₀ es que la intervención no tiene efecto. La prueba t arrojó",p:0.022,sig:true},
+  {tag:"ANOVA",title:"Mindfulness y Dolor Crónico",text:"Se evalúa si un programa de consciencia plena reduce la percepción de dolor en pacientes con dolor crónico. La H₀ indica que no hay efecto. El ANOVA arrojó",p:0.36,sig:false},
+  {tag:"Regresión",title:"Bullying y Autoestima",text:"Se examina si haber sido víctima de bullying escolar predice niveles bajos de autoestima en la adolescencia tardía. La H₀ es que no hay relación. La regresión arrojó",p:0.004,sig:true},
+  {tag:"Prueba t",title:"Estilos de Afrontamiento y Estrés Laboral",text:"Una psicóloga compara el nivel de estrés laboral entre empleados con afrontamiento activo vs. evitativo. La H₀ plantea que no hay diferencia entre grupos. La prueba t arrojó",p:0.19,sig:false},
+  {tag:"Correlación",title:"Identidad Profesional y Síndrome de Impostora",text:"Se investiga si una identidad profesional consolidada se asocia negativamente con el síndrome de impostora en mujeres profesionales. La H₀ indica que no hay asociación. La correlación de Pearson arrojó",p:0.031,sig:true},
+  {tag:"Chi-cuadrado",title:"Acceso a Salud Mental y Clase Social",text:"Se analiza si la clase social percibida predice el acceso efectivo a servicios de salud mental. La H₀ sostiene que no hay relación. El análisis chi-cuadrado arrojó",p:0.74,sig:false},
+  {tag:"Wilcoxon",title:"Gratitud y Bienestar Emocional",text:"Un investigador evalúa si la práctica diaria de gratitud durante cuatro semanas mejora el bienestar emocional autorreportado. La H₀ plantea que no hay efecto. La prueba de Wilcoxon arrojó",p:0.017,sig:true},
+  {tag:"Correlación",title:"Locus de Control y Adherencia Médica",text:"Se estudia si un locus de control interno se asocia con mayor adherencia a tratamientos médicos en pacientes crónicos. La H₀ indica que no hay asociación. La correlación arrojó",p:0.62,sig:false},
+  {tag:"Regresión",title:"Vínculo Terapéutico y Resultados en Psicoterapia",text:"Una clínica examina si la calidad del vínculo terapéutico predice los resultados positivos al final del proceso de psicoterapia. La H₀ sostiene que no hay relación. La regresión lineal arrojó",p:0.008,sig:true},
+  {tag:"Correlación",title:"Temperatura Ambiental y Agresividad",text:"Se evalúa si la temperatura ambiental alta se asocia con mayor conducta agresiva en contextos urbanos. La H₀ plantea que no hay asociación. La correlación arrojó",p:0.49,sig:false},
+  {tag:"Regresión logística",title:"Aceptación Psicológica y Síntomas de TOC",text:"Se estudia si los niveles de aceptación psicológica (terapia ACT) predicen la reducción de síntomas de TOC. La H₀ indica que no hay relación. La regresión logística arrojó",p:0.013,sig:true},
+  {tag:"Spearman",title:"Humor y Tolerancia al Estrés",text:"Un psicólogo evalúa si el sentido del humor medido con una escala validada se asocia con mayor tolerancia al estrés en trabajadores de urgencias hospitalarias. La H₀ sostiene que no hay asociación. La correlación de Spearman arrojó",p:0.58,sig:false}
+];
+
+// Questions per round position (0-indexed)
+const ROUND_QUESTIONS = [1, 1, 2, 3, 4];
+// Points per question by type (1-indexed)
+const Q_POINTS = [1, 2, 3, 4];
+
+const CONCEPT_NOTES = [
+  "El valor p se compara siempre con el nivel de significancia α = 0.05. Si p es menor, hay una señal estadística que merece atención.",
+  "El valor p se compara siempre con el nivel de significancia α = 0.05. Si p es menor, hay una señal estadística que merece atención.",
+  "Un resultado significativo no implica que sea importante o grande. Solo indica que es poco probable que ocurra por azar si H₀ fuera cierta.",
+  "Rechazar H₀ no prueba que sea falsa; significa que los datos no son compatibles con ella bajo el nivel de significancia elegido.",
+  "Apoyar H₁ no es lo mismo que probarla. Es una conclusión provisional basada en la evidencia disponible, siempre sujeta a revisión."
+];
+
+const LEVEL_LABELS = [
+  "Nivel 1 – Lectura del valor p",
+  "Nivel 1 – Lectura del valor p",
+  "Nivel 2 – Significancia estadística",
+  "Nivel 3 – Decisión sobre H₀",
+  "Nivel 4 – Razonamiento completo"
+];
+
+const FEEDBACK_OK = ["¡Exacto! Tu mente estadística está encendida 🔥","¡Perfecto! Eso es análisis de datos puro y duro 💡","¡Correcto! El valor p no te engaña 🎯","¡Brillante! Tienes ojo clínico para los datos 🧠","¡Así se hace! Sumas otro punto al marcador ⭐","¡Impecable! Vas dominando la estadística 💪","¡Muy bien! Cada acierto te acerca al nivel experto 🚀"];
+const FEEDBACK_FAIL = ["¡Ánimo! Recuerda: si p < 0.05, el resultado es significativo 💪","No te rindas, la práctica hace al maestro 📚","Casi, casi… revisa si el número supera 0.05 🔍","Error frecuente, lo importante es aprender de él 🌱","¡Tranquila/o! Con cada ronda mejorarás 🚀","Sigue intentándolo: compara el valor p con α = 0.05 🎯"];
+const Q_LABELS = ["¿p < 0.05?","¿Significativo?","¿Decisión sobre H₀?","¿Qué ocurre con H₁?"];
+
+let cases=[], round=0, score=0, streak=0, maxPossible=0, history=[];
+
+let audioCtx=null;
+function getAudio(){ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function playSuccess(){
+  try{const ctx=getAudio(),notes=[523.25,659.25,783.99,1046.50];
+  notes.forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.setValueAtTime(f,ctx.currentTime+i*0.12);g.gain.setValueAtTime(0.25,ctx.currentTime+i*0.12);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.12+0.25);o.start(ctx.currentTime+i*0.12);o.stop(ctx.currentTime+i*0.12+0.3);});}catch(e){}
+}
+function playError(){
+  try{const ctx=getAudio(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sawtooth';o.frequency.setValueAtTime(220,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(110,ctx.currentTime+0.3);g.gain.setValueAtTime(0.2,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);o.start(ctx.currentTime);o.stop(ctx.currentTime+0.4);}catch(e){}
+}
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function startGame(){
+  cases=shuffle(ALL_CASES).slice(0,5);
+  round=0;score=0;streak=0;history=[];
+  maxPossible=21;
+  updateStreak();
+  show('game');
+  loadCase();
+}
+
+function updateStreak(){
+  document.getElementById('streak-val').textContent=streak;
+  const box=document.getElementById('streak-box');
+  box.classList.add('bump');
+  setTimeout(()=>box.classList.remove('bump'),200);
+}
+
+function shuffleButtons(groupId) {
+  const group = document.getElementById(groupId);
+  const btns = Array.from(group.children);
+  if (Math.random() < 0.5) group.appendChild(btns[0]);
+}
+
+function loadCase(){
+  const c=cases[round];
+  document.getElementById('round-num').textContent=round+1;
+  document.getElementById('score-val').textContent=score;
+  document.getElementById('prog').style.width=(round/5*100)+'%';
+  document.getElementById('case-tag').textContent=c.tag;
+  document.getElementById('level-badge').textContent=LEVEL_LABELS[round];
+  document.getElementById('case-title').textContent=c.title;
+  document.getElementById('case-text').textContent=c.text+' un valor de';
+  document.getElementById('p-val').textContent=c.p;
+  ['q1-si','q1-no','q2-sig','q2-nosig','q3-rec','q3-norec','q4-apoya','q4-noapoya'].forEach(id=>{
+    const b=document.getElementById(id);b.className='btn-opt';b.disabled=false;
+  });
+  // Randomize button order for each question
+  shuffleButtons('q1-btns');
+  shuffleButtons('q2-btns');
+  shuffleButtons('q3-btns');
+  shuffleButtons('q4-btns');
+  document.getElementById('q1-block').style.display='block';
+  document.getElementById('q2-block').style.display='none';
+  document.getElementById('q3-block').style.display='none';
+  document.getElementById('q4-block').style.display='none';
+  document.getElementById('feedback-list').innerHTML='';
+  const cn=document.getElementById('concept-note');cn.className='concept-note';
+  document.getElementById('btn-next').classList.remove('show');
+}
+
+function addFeedback(qIdx,correct,correctLabel){
+  const msg=(correct?FEEDBACK_OK:FEEDBACK_FAIL)[Math.floor(Math.random()*(correct?FEEDBACK_OK:FEEDBACK_FAIL).length)];
+  const div=document.createElement('div');
+  div.className='feedback '+(correct?'ok':'fail');
+  div.innerHTML=`<span class="feedback-icon">${correct?'✅':'❌'}</span><div class="feedback-body"><span class="feedback-q">${Q_LABELS[qIdx]}</span><span>${msg}${!correct?' — Respuesta correcta: <strong>'+correctLabel+'</strong>':''}</span></div>`;
+  document.getElementById('feedback-list').appendChild(div);
+}
+
+function answer(qn,val){
+  const c=cases[round];
+  const numQ=ROUND_QUESTIONS[round];
+  let correct=false,correctLabel='';
+  if(qn===1){correct=(c.sig&&val==='si')||(!c.sig&&val==='no');correctLabel=c.sig?'Sí':'No';}
+  if(qn===2){correct=(c.sig&&val==='sig')||(!c.sig&&val==='nosig');correctLabel=c.sig?'Significativo':'No significativo';}
+  if(qn===3){correct=(c.sig&&val==='rec')||(!c.sig&&val==='norec');correctLabel=c.sig?'Rechazo H₀':'No rechazo H₀';}
+  if(qn===4){correct=(c.sig&&val==='apoya')||(!c.sig&&val==='noapoya');correctLabel=c.sig?'Se apoya H₁':'No hay evidencia suficiente para H₁';}
+
+  if(correct){score+=Q_POINTS[qn-1];streak++;playSuccess();}else{streak=0;playError();}
+  document.getElementById('score-val').textContent=score;
+  updateStreak();
+
+  const ids=qn===1?['q1-si','q1-no']:qn===2?['q2-sig','q2-nosig']:qn===3?['q3-rec','q3-norec']:['q4-apoya','q4-noapoya'];
+  const chosenId=qn===1?(val==='si'?'q1-si':'q1-no'):qn===2?(val==='sig'?'q2-sig':'q2-nosig'):qn===3?(val==='rec'?'q3-rec':'q3-norec'):(val==='apoya'?'q4-apoya':'q4-noapoya');
+  const correctId=qn===1?(c.sig?'q1-si':'q1-no'):qn===2?(c.sig?'q2-sig':'q2-nosig'):qn===3?(c.sig?'q3-rec':'q3-norec'):(c.sig?'q4-apoya':'q4-noapoya');
+  ids.forEach(id=>{
+    const b=document.getElementById(id);b.disabled=true;
+    if(id===chosenId&&correct)b.classList.add('correct');
+    else if(id===chosenId&&!correct)b.classList.add('wrong');
+    else if(id===correctId&&!correct)b.classList.add('correct');
+    else b.classList.add('missed');
+  });
+
+  addFeedback(qn-1,correct,correctLabel);
+
+  if(qn<numQ){
+    setTimeout(()=>document.getElementById('q'+(qn+1)+'-block').style.display='block',400);
+  } else {
+    history.push({title:c.title,p:c.p,sig:c.sig,numQ});
+    const cn=document.getElementById('concept-note');
+    document.getElementById('concept-text').textContent=CONCEPT_NOTES[round];
+    cn.classList.add('show');
+    document.getElementById('btn-next').classList.add('show');
+  }
+}
+
+function nextRound(){
+  round++;
+  if(round>=5){showResults();return;}
+  loadCase();
+}
+
+// CONFETTI
+function launchConfetti(){
+  const canvas=document.getElementById('confetti-canvas');
+  canvas.style.display='block';
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const colors=['#FFA69E','#B8F2E6','#AED9E0','#FAF3DD','#5E6572','#FFD700'];
+  const pieces=Array.from({length:120},()=>({
+    x:Math.random()*canvas.width,y:Math.random()*-canvas.height,
+    r:Math.random()*6+3,c:colors[Math.floor(Math.random()*colors.length)],
+    v:Math.random()*3+2,a:Math.random()*0.1-0.05,s:Math.random()*2-1
+  }));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c;ctx.fill();
+      p.y+=p.v;p.x+=p.s;p.a+=0.01;
+    });
+    frame++;
+    if(frame<180)requestAnimationFrame(draw);
+    else{ctx.clearRect(0,0,canvas.width,canvas.height);canvas.style.display='none';}
+  }
+  draw();
+}
+
+function showResults(){
+  document.getElementById('prog').style.width='100%';
+  show('results');
+  const pct=score/maxPossible;
+  document.getElementById('res-score').textContent=score+'/'+maxPossible;
+  document.getElementById('res-score-label').textContent='respuestas correctas de '+maxPossible+' posibles';
+
+  let emoji,title,msg;
+  if(pct===1)      {emoji='🏆';title='¡Eres p-Detective nivel experto/a!';msg='Impecable. Dominaste todos los niveles con precisión clínica. Tus pacientes y tus profesores estarán muy orgullosos.';}
+  else if(pct>=0.8){emoji='🌟';title='¡Excelente trabajo!';msg='Casi perfecto. Tienes una comprensión sólida del valor p. Un poco más de práctica y serás imparable en estadística.';}
+  else if(pct>=0.6){emoji='💡';title='¡Vas por buen camino!';msg='Buen desempeño. Recuerda: si p < 0.05, el resultado es significativo y rechazas H₀. ¡Sigue practicando!';}
+  else if(pct>=0.4){emoji='📚';title='¡Sigue intentándolo!';msg='Estás construyendo tu comprensión estadística. Revisa los casos que fallaste y vuelve a jugar.';}
+  else             {emoji='💪';title='¡El comienzo de un gran aprendizaje!';msg='No te desanimes. Recuerda: α = 0.05 es tu brújula. Si p está por debajo, rechazas H₀. ¡Inténtalo de nuevo!';}
+
+  document.getElementById('res-emoji').textContent=emoji;
+  document.getElementById('res-title').textContent=title;
+  document.getElementById('res-msg').textContent=msg;
+
+  const rl=document.getElementById('review-list');rl.innerHTML='';
+  history.forEach(h=>{
+    const d=document.createElement('div');d.className='review-item';
+    d.innerHTML=`<span class="ri-icon">${h.sig?'✅':'➖'}</span><div><div class="ri-title">${h.title}</div><div class="ri-p">p = ${h.p} → ${h.sig?'Significativo · Rechazo H₀':'No significativo · No rechazo H₀'}</div></div>`;
+    rl.appendChild(d);
+  });
+
+  if(pct>=0.8) setTimeout(launchConfetti,400);
+}
+</script>
+</body>
+</html>
